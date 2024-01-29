@@ -90,7 +90,7 @@ def main():
         #input_df = pd.DataFrame([input_data])
         st.write(input_data_processed)
         
-        st.write(input_data_processed)
+       
         #final_df = preprocess_data(input_data_processed)
         
         prediction = model.predict(input_data_processed)[0]  # Use the model to predict the outcome
