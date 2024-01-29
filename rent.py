@@ -95,7 +95,7 @@ def main():
         
         prediction = model.predict(input_data_processed)[0]  # Use the model to predict the outcome
         # Display the prediction result
-        st.write("The predicted price of the rental properties is:",round(prediction))
+        st.write(f"The predicted price of the rental properties is: ₦{round(prediction)}")
         
 
 
