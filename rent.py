@@ -1,39 +1,38 @@
-import streamlit as st
+
+
 import pandas as pd
-import pickle
 from sklearn.preprocessing import MinMaxScaler, LabelEncoder
+from joblib import load
+import streamlit as st
 from PIL import Image
-import numpy as np
 
-# Load the model with pickle
-with open('Price.pkl', 'rb') as file:
-    model = pickle.load(file)
+# Import Model
+model = load('Price.joblib')
 
-# Create MinMaxScaler
-mm = MinMaxScaler()
+columns_to_scale = ['Serviced','Newly Built','Furnished','Area']
 
-def preprocess_input(input_df):
-    # Create a copy of the input DataFrame to avoid modifying the original
-    processed_df = input_df.copy()
 
-    # Label Encode 'Area'
+
+# Function to preprocess input data
+def preprocess_data(df):
+    processed_df = df.copy()
+
+    # Perform label encoding for categorical columns
+    categorical_cols = ['Serviced','Newly Built','Furnished','Area']
     label_encoder = LabelEncoder()
-    processed_df['Area'] = label_encoder.fit_transform(processed_df['Area'])
-    processed_df['Serviced'] = label_encoder.fit_transform(processed_df['Serviced'])    
-    processed_df['Newly Built'] = label_encoder.fit_transform(processed_df['Newly Built'])
-    processed_df['Furnished'] = label_encoder.fit_transform(processed_df['Furnished'])
-    # MinMax scaling for numerical features
-    numerical_features = ['Bedrooms', 'Bathrooms', 'Toilets', 'Area']
+    for col in categorical_cols:
+        if col in processed_df.columns:
+            processed_df[col] = label_encoder.fit_transform(processed_df[col])
 
-    # Fit MinMaxScaler on numerical features
-    mm.partial_fit(processed_df[numerical_features])
-
-    # Transform using the fitted MinMaxScaler
-    processed_df[numerical_features] = mm.transform(processed_df[numerical_features])
+    # Perform Min-Max scaling for all columns
+    mm_scaler = MinMaxScaler()
+    processed_df[processed_df.columns] = mm_scaler.fit_transform(processed_df)
 
     return processed_df
-
-
+def preprocessor(input_df):
+    # Preprocess categorical and numerical columns separately
+    input_df = preprocess_data(input_df)
+    return input_df
 
 
 # Main function to create web app interface
@@ -86,24 +85,16 @@ def main():
                                                    'Agboyi', 'Obalende', 'Majek', 'Pipeline', 'Ifako Ijaiye',
                                                    'Oke Ira', 'Ogunlana drive', 'lagos Mainland'], key='Area')
     
-    input_df = pd.DataFrame([input_data])
-    st.write(input_df)  # Display collected data
-    
-    if st.button('PREDICT'):
-        final_df = preprocess_input(input_df)
-        st.write(final_df)
-        
-        # Extract the numpy array from the DataFrame for prediction
-        input_for_prediction = final_df.to_numpy()
-        
-        print("Input for prediction:", input_for_prediction)
-        prediction = model.predict(input_for_prediction)
-        print("Raw prediction:", prediction)
-        # Assuming prediction is a NumPy array or a scalar
-        prediction = prediction[0] if isinstance(prediction, (list, np.ndarray)) else prediction
-        
-        st.write(f'The predicted price based on your inputs is {prediction}')
+    input_df = pd.DataFrame([input_data])  # Convert collected data into a DataFrame
 
-# Run the main function when this script is executed directly
+    if st.button('Predict'):  # When the 'Predict' button is clicked
+        final_df = preprocessor(input_df)  # Preprocess the collected data
+        prediction = model.predict(final_df)[0]  # Use the model to predict the outcome
+
+        # Display the prediction result
+        st.write("The predicted price of the rental properties is:")
+        st.write(prediction)
+
+
 if __name__ == '__main__':
     main()
